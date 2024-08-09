@@ -113,6 +113,10 @@ extern "C"
 	#include <syslog.h>
 #endif
 
+#if USE_SYSTEMD
+	#include <systemd/sd-daemon.h>
+#endif
+
 #if HAVE_GETRLIMIT & HAVE_SETRLIMIT
 	#include <sys/resource.h>
 #endif
@@ -126,6 +130,12 @@ static bool				g_bService		= false;
 static bool				g_bServiceStop	= false;
 static const char *		g_sServiceName	= "searchd";
 static HANDLE			g_hPipe			= INVALID_HANDLE_VALUE;
+#endif
+
+#if USE_SYSTEMD
+static bool g_bOptNotify = true;
+#else
+static bool g_bOptNotify = false;
 #endif
 
 static StrVec_t	g_dArgs;
@@ -687,6 +697,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 void Shutdown () REQUIRES ( MainThread ) NO_THREAD_SAFETY_ANALYSIS
 {
+	if ( g_bOptNotify ) sd_notify(0, "STOPPING=1");
 	// force even long time searches to shut
 	SHUTINFO << "Trigger g_bInterruptNow ...";
 	sphInterruptNow ();
@@ -19584,6 +19595,11 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 			sphInfo ( "watchdog: main process %d forked ok", iChild );
 			snprintf ( g_sPid, sizeof(g_sPid), "%d", iChild);
 		}
+		if ( g_bOptNotify )
+		{
+			sd_notify(0, "MAINPID=%d", getpid());
+			sd_notify(0, "NOTIFYACCESS=all");
+		}
 
 		SetSignalHandlers();
 
@@ -21538,6 +21554,9 @@ int WINAPI ServiceMain ( int argc, char **argv ) EXCLUDES (MainThread)
 
 	// ready, steady, go
 	sphInfo ( "accepting connections" );
+	if (g_bOptNotify) {
+		sd_notify(0, "READY=1");
+	}
 
 	// disable startup logging to stdout
 	if ( !g_bOptNoDetach )
