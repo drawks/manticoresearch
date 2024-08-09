@@ -71,6 +71,10 @@
 	#include <netinet/in.h>
 #endif
 
+#if USE_SYSTEMD
+	#include <systemd/sd-daemon.h>
+#endif
+
 // for HAVE_GETRLIMIT, HAVE_SETRLIMIT
 #include "config.h"
 #if HAVE_GETRLIMIT & HAVE_SETRLIMIT
@@ -173,6 +177,12 @@ static auto&			g_bCpuStats 	= sphGetbCpuStat ();
 static bool				g_bOptNoDetach	= false; // whether to detach from console, or work in front
 static bool				g_bOptNoLock	= false; // whether to lock indexes (with .spl) or not
 static bool				g_bStripPath	= false;
+
+#if USE_SYSTEMD
+static bool g_bOptNotify = true;
+#else
+static bool g_bOptNotify = false;
+#endif
 
 static auto& g_bGotSighup		= sphGetGotSighup();	// we just received SIGHUP; need to log
 static auto& g_bGotSigusr1		= sphGetGotSigusr1();	// we just received SIGUSR1; need to reopen logs
@@ -290,6 +300,7 @@ static CSphString GetNamedPipeName ( int iPid )
 /////////////////////////////////////////////////////////////////////////////
 void Shutdown () REQUIRES ( MainThread ) NO_THREAD_SAFETY_ANALYSIS
 {
+	if ( g_bOptNotify ) sd_notify(0, "STOPPING=1");
 	// force even long time searches to shut
 	SHUTINFO << "Trigger g_bInterruptNow ...";
 	sphInterruptNow ();
@@ -13223,6 +13234,11 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 			sphInfo ( "watchdog: main process %d forked ok", iChild );
 			snprintf ( g_sPid, sizeof(g_sPid), "%d", iChild);
 		}
+		if ( g_bOptNotify )
+		{
+			sd_notify(0, "MAINPID=%d", getpid());
+			sd_notify(0, "NOTIFYACCESS=all");
+		}
 
 		SetSignalHandlers();
 
@@ -14935,6 +14951,8 @@ int WINAPI ServiceMain ( int argc, char **argv ) EXCLUDES (MainThread)
 
 	// ready, steady, go
 	sphInfo ( "accepting connections" );
+	if (g_bOptNotify)
+		sd_notify(0, "READY=1");
 
 	// disable startup logging to stdout
 	if ( !g_bOptNoDetach )

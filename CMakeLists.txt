@@ -172,6 +172,11 @@ check_include_file ( "syslog.h" HAVE_SYSLOG_H )
 set ( USE_SYSLOG ${HAVE_SYSLOG_H} CACHE BOOL "compile with possibility to use syslog for logging" )
 bannervar ( USE_SYSLOG )
 
+# Option USE_SYSTEMD
+check_include_file ( "systemd/sd-daemon.h" HAVE_SYSTEMD_H )
+set ( USE_SYSTEMD ${HAVE_SYSTEMD_H} CACHE BOOL "compile with possibility to use systemd notify mechanisms" )
+bannervar ( USE_SYSTEMD )
+
 # options for clang/gcc c and c++
 target_compile_options ( lextra INTERFACE $<${ONLYGNUCLANGC_CXX}:-D_FILE_OFFSET_BITS=64 -Wall -Wstrict-aliasing> )
 target_compile_options ( lextra INTERFACE $<${CLANGWIN}:-Wstrict-aliasing -Wno-format -Wno-uninitialized-const-reference -Wno-unneeded-internal-declaration
