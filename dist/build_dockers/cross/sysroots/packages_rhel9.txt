@@ -8,4 +8,5 @@ dnf install -y \
         jemalloc-devel \
         openssl-devel \
         libzstd-devel \
-        libcurl-devel
+        libcurl-devel \
+        systemd-devel
