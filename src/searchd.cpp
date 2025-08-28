@@ -69,11 +69,9 @@
 #if !_WIN32
 	#include <sys/wait.h>
 	#include <netinet/in.h>
+	#include <systemd/sd-daemon.h> // XXX - this should be in its own conditional probably
 #endif
 
-#if USE_SYSTEMD
-	#include <systemd/sd-daemon.h>
-#endif
 
 // for HAVE_GETRLIMIT, HAVE_SETRLIMIT
 #include "config.h"
@@ -13236,7 +13234,7 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 		}
 		if ( g_bOptNotify )
 		{
-			sd_notify(0, "MAINPID=%d", getpid());
+			sd_notifyf(0, "MAINPID=%d", getpid());
 			sd_notify(0, "NOTIFYACCESS=all");
 		}
 
