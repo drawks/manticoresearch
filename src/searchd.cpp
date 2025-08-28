@@ -176,7 +176,7 @@ static bool				g_bOptNoDetach	= false; // whether to detach from console, or wor
 static bool				g_bOptNoLock	= false; // whether to lock indexes (with .spl) or not
 static bool				g_bStripPath	= false;
 
-#if USE_SYSTEMD
+#if !_WIN32
 static bool g_bOptNotify = true;
 #else
 static bool g_bOptNotify = false;
