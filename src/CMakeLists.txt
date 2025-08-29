@@ -303,6 +303,10 @@ if (WITH_ZLIB OR WITH_ZSTD)
 	endif ()
 endif ()
 
+if (WITH_SYSTEMD)
+	target_link_libraries ( lsearchd PRIVATE SYSTEMD::SYSTEMD )
+endif ()
+
 if (WITH_CURL)
 	if (DL_CURL)
 		target_link_libraries ( lsearchd PRIVATE CURL::libcurl_ld )
