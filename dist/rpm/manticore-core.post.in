@@ -1,3 +1,4 @@
+# XXX - properly set attrs in %files section
 chown -R %{manticore_user}:%{manticore_group} @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/manticore
 
 # print some further pointers

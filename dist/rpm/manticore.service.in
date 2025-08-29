@@ -1,22 +1,22 @@
 [Unit]
 Description=Manticore Search Engine
 After=network.target remote-fs.target nss-lookup.target
-After=syslog.target
+Documentation=https://manual.manticoresearch.com/, man:searchd(1)
 
 [Service]
 Type=notify
 User=manticore
 Group=manticore
-ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/searchd --config @CMAKE_INSTALL_FULL_SYSCONFDIR@/manticoresearch/manticore.conf $_ADDITIONAL_SEARCHD_PARAMS
-ExecStop=@CMAKE_INSTALL_FULL_BINDIR@/searchd --config @CMAKE_INSTALL_FULL_SYSCONFDIR@/manticoresearch/manticore.conf --stopwait
-KillMode=process
-KillSignal=SIGTERM
-SendSIGKILL=no
+RuntimeDirectory=manticore
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/searchd \
+  --config @CMAKE_INSTALL_FULL_SYSCONFDIR@/manticoresearch/manticore.conf \
+  --nodetach \
+  $_ADDITIONAL_SEARCHD_PARAMS
 LimitNOFILE=65536
 LimitCORE=infinity
 LimitMEMLOCK=infinity
+TimeoutStartSec=infinity
 Restart=on-failure
-TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target
