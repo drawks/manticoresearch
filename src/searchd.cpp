@@ -13144,8 +13144,8 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 {
 	InitSharedBuffer ();
 
-	// Fork #1 - detach from controlling terminal
-	switch ( fork() )
+	// Fork #1 - detach from controlling terminal unless disabled
+	switch ( g_bOptNoDetach ? 0 : fork() )
 	{
 		case -1:
 			// error
@@ -13164,14 +13164,14 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 	}
 
 	// became the session leader
-	if ( setsid()==-1 )
+	if ( !g_bOptNoDetach && setsid()==-1 )
 	{
 		sphFatalLog ( "setsid() failed (reason: %s)", strerrorm ( errno ) );
 		exit ( 1 );
 	}
 
 	// Fork #2 - detach from session leadership (may be not necessary, however)
-	switch ( fork() )
+	switch ( g_bOptNoDetach ? 0 : fork() )
 	{
 		case -1:
 			// error
@@ -13179,10 +13179,17 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 			exit ( 1 );
 		case 0:
 			// daemonized child - or new and free watchdog :)
+			if ( g_bOptNotify ) sd_notifyf(0, "MAINPID=%d", getpid());
 			break;
 
 		default:
 			// tty-controlled parent
+			if ( g_bOptNotify ) {
+				// let systemd know to expect notifications from our children
+				sd_notify(0, "NOTIFYACCESS=all");
+				// block for our notification to be ack'd before exiting
+				sd_notify_barrier(0, g_iShutdownTimeoutUs);
+			};
 			exit ( 0 );
 	}
 
@@ -13216,7 +13223,7 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 
 		// parent process, watchdog
 		// close the io files
-		if ( bStreamsActive )
+		if ( !g_bOptNoDetach && bStreamsActive )
 		{
 			close ( STDIN_FILENO );
 			close ( STDOUT_FILENO );
@@ -13231,11 +13238,6 @@ bool SetWatchDog ( int iDevNull ) REQUIRES ( MainThread )
 		{
 			sphInfo ( "watchdog: main process %d forked ok", iChild );
 			snprintf ( g_sPid, sizeof(g_sPid), "%d", iChild);
-		}
-		if ( g_bOptNotify )
-		{
-			sd_notifyf(0, "MAINPID=%d", getpid());
-			sd_notify(0, "NOTIFYACCESS=all");
 		}
 
 		SetSignalHandlers();
@@ -14359,7 +14361,8 @@ int WINAPI ServiceMain ( int argc, char **argv ) EXCLUDES (MainThread)
 		OPT1 ( "--delete" )			{ if ( !WinService() ) { ServiceDelete (); return 0; } }
 		OPT1 ( "--ntservice" )		{} // it's valid but handled elsewhere
 #else
-		OPT1 ( "--nodetach" )		g_bOptNoDetach = true;
+		OPT1 ( "--nodetach" )		{ g_bOptNoDetach = true; g_bWatchdog = false; }
+		OPT1 ( "--watchdog" )		g_bWatchdog = true; // allow explictly running under the watchdog
 #endif
 		OPT1 ( "--logdebug" )		g_eLogLevel = Max ( g_eLogLevel, SPH_LOG_DEBUG );
 		OPT1 ( "--logdebugv" )		g_eLogLevel = Max ( g_eLogLevel, SPH_LOG_VERBOSE_DEBUG );
@@ -14529,7 +14532,7 @@ int WINAPI ServiceMain ( int argc, char **argv ) EXCLUDES (MainThread)
 #if !_WIN32
 	// Let us start watchdog right now, on foreground first.
 	int iDevNull = open ( "/dev/null", O_RDWR );
-	if ( g_bWatchdog && !g_bOptNoDetach )
+	if ( g_bWatchdog )
 	{
 		bWatched = true;
 		if ( !g_bOptNoLock )

@@ -142,6 +142,8 @@
 /* define to use Zlib */
 #cmakedefine01 WITH_ZLIB
 
+#cmakedefine01 WITH_SYSTEMD
+
 /* define to use Zstd */
 #cmakedefine01 WITH_ZSTD
 #cmakedefine01 DL_ZSTD

@@ -23,8 +23,9 @@ set ( WITH_POSTGRESQL 1 CACHE BOOL "Forced Pgsql" FORCE )
 set ( WITH_RE2 1 CACHE BOOL "Forced RE2" FORCE )
 set ( WITH_STEMMER 1 CACHE BOOL "Forced Stemmer" FORCE )
 set ( WITH_SSL 1 CACHE BOOL "Forced OpenSSL" FORCE )
+set ( WITH_SYSTEMD 1 CACHE BOOL "Forced Systemd" FORCE )
 SET ( BUILD_TESTING 0 CACHE BOOL "Forced no testing" FORCE )
 infomsg ( "DISTR_BUILD applied.
 Package will be set to ${DISTR_BUILD},
-also option forced to ON values: WITH_MYSQL, WITH_EXPAT, WITH_POSTGRESQL, WITH_RE2, WITH_STEMMER, WITH_SSL.
+also option forced to ON values: WITH_MYSQL, WITH_EXPAT, WITH_POSTGRESQL, WITH_RE2, WITH_STEMMER, WITH_SSL, WITH_SYSTEMD.
 Also LIBS_BUNDLE is automatically set to folder 'bundle' placed one level above the sources" )
